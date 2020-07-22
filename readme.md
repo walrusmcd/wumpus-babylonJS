@@ -6,7 +6,7 @@ The mentor project is sponsored by Microsoft, details [here](http://aka.ms/wumpu
 
 This repo is a teaching sample on how to make the game to spec, using Babylon.JS
 
-## Tutorial this project was inspired on
+## Tutorial this project was inspired by
 
 The project is inspired and based from [this blog post tutortial](https://docs.microsoft.com/en-us/archive/blogs/davrous/coding4fun-tutorial-creating-a-3d-webgl-procedural-qrcode-maze-with-babylon-js) from David Rousset.    That step by step tutorial can help people understand some of how this project is built.   How it works, and has a step by step guide on some of the details like cloning, canvas, physics, and camera animations.
 
