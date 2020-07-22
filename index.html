@@ -1,17 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-
+﻿<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <title>Vanilla JavaScript App</title>
+    <title>Babylon.js - Coding4fun - 3D QRCode Maze</title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+    <script src="//code.jquery.com/jquery-1.9.1.js"></script>
+    <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+    <link href="css/main.css" rel="stylesheet" />
+
+    <script src="scripts/cannon.js"></script>
+    <script src="scripts/babylon.js"></script>
+    <script src="scripts/caves.js"></script>
+    <script src="scripts/gui.js"></script>
 </head>
-
 <body>
-  <main>
-    <h1>Vanilla JavaScript App</h1>
-  </main>
+    <canvas id="canvas" class="offScreen"></canvas>
+    <div id="dialog-form" title="Create Labyrinth">
+        <form>
+            <fieldset>
+                <label for="name">Player name:</label>
+                <input type="text" name="name" id="name" class="text ui-widget-content ui-corner-all">
+            </fieldset>
+        </form>
+    </div>
+    <div id="logo">
+    </div>
 </body>
-
 </html>
