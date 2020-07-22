@@ -1,8 +1,8 @@
 # Hunt-The-Wumpus BabylonJS Edition
 
-Hunt-The-Wumpus is a [adventure game invented in 1973](https://en.wikipedia.org/wiki/Hunt_the_Wumpus).   It is used in high schools as a mentor project to tech computer science to Juniors and Seniors.
+Hunt-The-Wumpus is a [adventure game invented in 1973](https://en.wikipedia.org/wiki/Hunt_the_Wumpus).   It is used today as a local mentor project in high schools to inspire and showcase what real computer science projects look like to Juniors and Seniors.  By building a game !
 
-The mentor project is sponsored by Microsoft, and has details [here](http://aka.ms/wumpus/)
+The mentor project is sponsored by Microsoft, details [here](http://aka.ms/wumpus/).
 
 This repo is a teaching sample on how to make the game to spec, using Babylon.JS
 
@@ -12,7 +12,7 @@ The project is inspired and based from [this blog post tutortial](https://docs.m
 
 I have modified that project from a QR code valentines day maze, into a traditional hunt the wumpus.
 
-It uses the Babylon.js 3D game engine from [here](https://github.com/BabylonJS/Babylon.js) and the cannon.js physics engine from [here](https://github.com/schteppe/cannon.js/)
+I have also updated it from the tutorial to use the latest drops of the Babylon.js 3D game engine from [here](https://github.com/BabylonJS/Babylon.js) and the cannon.js physics engine from [here](https://github.com/schteppe/cannon.js/)
 
 ## Getting started
 
