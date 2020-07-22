@@ -18,12 +18,14 @@ It uses the Babylon.js 3D game engine from [here](https://github.com/BabylonJS/B
 
 To get started with this project first clone the repo.
 
+### Tools
 Then get the following tools:
 
   - **Visual Studio Code**.  This is a great lightweight free code editors. It will do debugging, and GIT source control all built in.  Download [here](https://code.visualstudio.com/).
   - **LiveServer vscode extension**.   This is an extension that will fire up a lightweight web server on your local machine in order to run the web app from.   Download [here](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer).
   - **ChromeDebugger vscode extension**.  This is an extension that will allow you to easily debug all of your code.  Download [here](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
+### Development workflow
 Once you have all of that setup, your workflow is something like this.
 
   1. Write some code.
@@ -31,6 +33,11 @@ Once you have all of that setup, your workflow is something like this.
   3. Point your browser to http://127.0.0.1:5500/ to run the app
   4. Set breakpoints and run the ChromeDebugger to debug your code.
   5. Rinse and repeat.
+
+### Publishing
+This github project is also linked to a Azure static website build process.  It will automatically build and snap to any changes in the master branch.   The web game is automatically published here:
+
+ - https://lively-sea-0f3ffb20f.azurestaticapps.net/
 
 ## Game controls
 
