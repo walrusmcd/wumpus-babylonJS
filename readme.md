@@ -29,9 +29,9 @@ Then get the following tools:
 Once you have all of that setup, your workflow is something like this.
 
   1. Write some code.
-  2. Make sure the LiveServer is running your local web server.
+  2. Make sure the LiveServer is running your local web server (there is a start/stop button in the bottom right of the status tray)
   3. Point your browser to http://127.0.0.1:5500/ to run the app
-  4. Set breakpoints and run the ChromeDebugger to debug your code.
+  4. Set breakpoints and run the ChromeDebugger to debug your code (Run->Start Debugging)
   5. Rinse and repeat.
 
 ### Publishing

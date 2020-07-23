@@ -19,7 +19,7 @@ var GROUND_HEIGHT = ((ROWS*2)+2) * WALL_WIDTH; // 12
 
 // Are we inside the labyrinth or looking at the QR Code in zoom out?
 var birdsEyeView = false;
-var freeCamera, canvas, engine, lovescene;
+var freeCamera, canvas, engine, mainScene;
 var camPositionInLabyrinth, camRotationInLabyrinth;
 var ground;
 var mainWall;
@@ -330,8 +330,8 @@ function createMaze(nameOfYourGirlFriend) {
     return scene;
 };
 
-window.onload = function () {
-    canvas = document.getElementById("canvas");
+function newGame() {
+    document.getElementById("dialog-form").className = "onScreen";
 
     $("#dialog-form").dialog({
         autoOpen: true,
@@ -341,20 +341,27 @@ window.onload = function () {
         buttons: {
             "Create": function () {
                 //Creating scene
-                lovescene = createMaze($("#name").val());
+                mainScene = createMaze($("#name").val());
 
-                lovescene.activeCamera.attachControl(canvas);
+                mainScene.activeCamera.attachControl(canvas);
 
                 // Once the scene is loaded, just register a render loop to render it
                 engine.runRenderLoop(function () {
-                    lovescene.render();
+                    mainScene.render();
                 });
 
                 canvas.className = "offScreen onScreen";
                 $(this).dialog("close");
+                document.getElementById("new-game").blur();
             }
         }
     });
+};
+
+window.onload = function () {
+    canvas = document.getElementById("canvas");
+
+    document.getElementById("new-game").onclick = newGame;
 
     // Check support
     if (!BABYLON.Engine.isSupported()) {
@@ -507,5 +514,5 @@ var animateCameraPositionAndRotation = function (freeCamera, fromPosition, toPos
     freeCamera.animations.push(animCamPosition);
     freeCamera.animations.push(animCamRotation);
 
-    lovescene.beginAnimation(freeCamera, 0, 100, false);
+    mainScene.beginAnimation(freeCamera, 0, 100, false);
 };
