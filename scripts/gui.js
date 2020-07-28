@@ -16,7 +16,6 @@ var NUMBER_OF_ROOMS = 30;
 var GROUND_WIDTH = ((COLS*2)-1) * WALL_WIDTH;  // 11
 var GROUND_HEIGHT = ((ROWS*2)+2) * WALL_WIDTH; // 12
 
-
 // Are we inside the labyrinth or looking at the QR Code in zoom out?
 var birdsEyeView = false;
 var freeCamera, canvas, engine, mainScene;
@@ -24,8 +23,7 @@ var camPositionInLabyrinth = null, camRotationInLabyrinth = null;
 var ground;
 var mainWall, halfWall;
 
-// coordinate space: 0,0 is in the middle of the ground
-
+// coordinate space: 0,0 is in the middle of the entire ground space
 function getCenterOfRoom(roomNumber){
     // which column and row are we in?
     var col = ((roomNumber-1) % COLS) + 1;
@@ -33,125 +31,141 @@ function getCenterOfRoom(roomNumber){
     // these are from birdseye (left + top)
     var groundLeft = GROUND_WIDTH / 2 * -1;
     var groupTop = GROUND_HEIGHT / 2;
-
-    // col, number of widths
-    // { 1, 2 }
+    // cheat sheet on how to find the center "X" based on number of wall widths
+    // { col, number of widths }
+    // { 1, 2   }
     // { 2, 3.5 }
-    // { 3, 5 }
+    // { 3, 5   }
     // { 4, 6.5 }
-    // { 5, 8 }
+    // { 5, 8   }
     // { 6, 9.5 }
     var xPos = groundLeft + WALL_WIDTH + ((1 + (1.5 * (col-1))) * 15);
-
-    // row, number of widths
-    // { 1, 2 } 1
-    // { 2, 4 } 3
-    // { 3, 6 } 5
-    // { 4, 8 } 7
+    // cheat sheet on how to find the center "Z" based on number of wall widths
+    // { row, number of widths }
+    // { 1, 2  } 1
+    // { 2, 4  } 3
+    // { 3, 6  } 5
+    // { 4, 8  } 7
     // { 5, 10 } 9
     var zPos = groupTop - 36 - ((row-1) * 26); // WALL_WIDTH
+    // odd columns are shifted down a bit
     var oddCol = col % 2;
     if (!oddCol) {
         zPos -= 13;
     }
-
-    var position = new BABYLON.Vector3(
-        xPos,               // x
-        WALL_HEIGHT / 2,    // y
-        zPos);              // z
-
+    // x, y, z
+    var position = new BABYLON.Vector3(xPos, WALL_HEIGHT / 2, zPos);
     return position;
 }
 
-// makes 6 walls, leaves out a wall if there is a door
+// makes 6 walls, used "half walls" if there is a door
 function createRoom(roomNumber, doors) {
-
+    // get the center of the room
     var wallPosition = getCenterOfRoom(roomNumber);
-
+    // 0 is the "top" wall
     if (!doors[0]) {
+        // clone a wall
         var wall = mainWall.clone("wall-"+roomNumber+"-1");
+        // clone the center position
         wall.position = wallPosition.clone();
+        // slide it up
         wall.position.z += 13;
     } else {
+        // clone a half wall
         wall = halfWall.clone("wall-"+roomNumber+"-1.1");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.z += 13;
         wall.position.x -= 5;
+        // clone a half wall
         wall = halfWall.clone("wall-"+roomNumber+"-1.2");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.z += 13;
         wall.position.x += 5;
     }
-
+    // 1 is the next wall on the right (clockwise)
     if (!doors[1]) {
+        // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-2");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x += 11.25;
         wall.position.z += 6.5;
         wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
     } else {
         wall = halfWall.clone("wall-"+roomNumber+"-2.1");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x += 8.65;
         wall.position.z += 11;
         wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
         wall = halfWall.clone("wall-"+roomNumber+"-2.2");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x += 13.85;
         wall.position.z += 2;
         wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
     }
-
     if (!doors[2]) {
+        // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-3");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x += 11.25;
         wall.position.z -= 6.5;
         wall.rotation.y = (Math.PI * 2 / 3);
     }
-
     if (!doors[3]) {
+        // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-4");
+        // clone the center position
         wall.position = wallPosition.clone();
+        // slide it down
         wall.position.z -= 13;
     } else {
         wall = halfWall.clone("wall-"+roomNumber+"-4.1");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.z -= 13;
         wall.position.x -= 5;
         wall = halfWall.clone("wall-"+roomNumber+"-4.2");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.z -= 13;
         wall.position.x += 5;
     }
-
     if (!doors[4]) {
+        // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-5");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x -= 11.25; 
         wall.position.z -= 6.5;
         wall.rotation.y = (Math.PI / 3); 
     }
-
     if (!doors[5]) {
+        // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-6");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x -= 11.25;
         wall.position.z += 6.5;
         wall.rotation.y = (Math.PI * 2 / 3);
     } else {
         wall = halfWall.clone("wall-"+roomNumber+"-6.1");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x -= 8.65;
         wall.position.z += 11;
         wall.rotation.y = (Math.PI * 2 / 3);
         wall = halfWall.clone("wall-"+roomNumber+"-6.2");
+        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x -= 13.85;
         wall.position.z += 2;
         wall.rotation.y = (Math.PI * 2 / 3);
     }
-
 }
 
 function createMaze(nameOfYourGirlFriend) {
@@ -201,8 +215,8 @@ function createMaze(nameOfYourGirlFriend) {
         false);         // updatable
     ground.material = groundMaterial;
     ground.checkCollisions = true;
-    //ground.setPhysicsState({ impostor: BABYLON.PhysicsEngine.PlaneImpostor, mass: 0, friction: 0.5, restitution: 0.7 });
-    ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.PlaneImpostor, { mass: 0, friction: 0.5, restitution: 0.7 });
+    // friction is just friction, restitution is how "bouncy" the collsion is .  1.0 will be very bouncy.
+    ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, friction: 0.5, restitution: 0.7 });
 
     //Skybox
     var skybox = BABYLON.Mesh.CreateBox("skyBox", 800.0, scene);
@@ -222,8 +236,6 @@ function createMaze(nameOfYourGirlFriend) {
     var light1 = new BABYLON.PointLight("pointlight1", new BABYLON.Vector3(382, 96, 4), scene);
     light1.diffuse = new BABYLON.Color3(1, 0.7333333333333333, 0.3568627450980392);
     light1.intensity = 0.2;
-
-    //TO DO: create the labyrinth
 
     // create a standard material for the top (from a color)
     var cubeTopMaterial = new BABYLON.StandardMaterial("cubeTop", scene);
@@ -321,24 +333,6 @@ function createMaze(nameOfYourGirlFriend) {
         createRoom(roomNum, cave[roomNum-1]);
     }
 
-    //var maze = mergeMeshes("maze", cubesCollection, scene);
-    //maze.checkCollisions = true;
-    //maze.material = cubeWallMaterial;
-
-    //var mazeTop = mergeMeshes("mazeTop", cubesTopCollection, scene);
-    //mazeTop.material = cubeTopMaterial;
-
-    var x = BLOCK_SIZE / 2 + (7 - (mCount / 2)) * BLOCK_SIZE;
-    var y = BLOCK_SIZE / 2 + (1 - (mCount / 2)) * BLOCK_SIZE;
-
-    // put the player in a random room
-    var randomRoom = (Math.random() * 30) + 1;
-    freeCamera.position = getCenterOfRoom(randomRoom)
-    freeCamera.position.y = 2;
-
-    //freeCamera.position = new BABYLON.Vector3(0, 2, 0);
-    //freeCamera.rotation = new BABYLON.Vector3(0, 0, 0);
-
     window.addEventListener("keydown", function (event) {
         // ascii 32 is the 'space' char
         if (event.keyCode === 32) {
@@ -427,7 +421,7 @@ var animateCameraPositionAndRotationEnd = function () {
 function gotoRoom() {
     document.getElementById("dialog-form").className = "onScreen";
     document.getElementById("dialog-form").title = "goto room";
-    document.getElementById("form-label").innerText = "Room number:";
+    document.getElementById("form-label").innerText = "room number:";
     document.getElementById("form-value").value = "";
 
     $("#dialog-form").dialog({
@@ -436,7 +430,7 @@ function gotoRoom() {
         width: 350,
         modal: true,
         buttons: {
-            "Go": function () {
+            "go": function () {
 
                 freeCamera.position = getCenterOfRoom($("#form-value").val())
                 freeCamera.position.y = 2;
@@ -451,7 +445,7 @@ function gotoRoom() {
 function newGame() {
     document.getElementById("dialog-form").className = "onScreen";
     document.getElementById("dialog-form").title = "new game";
-    document.getElementById("form-label").innerText = "Player name:";
+    document.getElementById("form-label").innerText = "player name:";
 
     $("#dialog-form").dialog({
         autoOpen: true,
@@ -459,7 +453,7 @@ function newGame() {
         width: 350,
         modal: true,
         buttons: {
-            "Create": function () {
+            "go": function () {
                 // create the main maze scene
                 mainScene = createMaze($("#form-value").val());
 
@@ -468,6 +462,11 @@ function newGame() {
 
                 // create the game controls
                 createGameControls();
+
+                // put the player in a random room
+                var randomRoom = (Math.random() * 30) + 1;
+                freeCamera.position = getCenterOfRoom(randomRoom)
+                freeCamera.position.y = 2;
 
                 // Once the scene is loaded, just register a render loop to render it
                 engine.runRenderLoop(function () {
@@ -479,7 +478,6 @@ function newGame() {
                 
                 // close the new game dialog
                 $(this).dialog("close");                
-                document.getElementById("new-game").blur();
             }
         }
     });
@@ -504,106 +502,7 @@ window.onload = function () {
     }
 };
 
-var mergeMeshes = function (meshName, arrayObj, scene) {
-    var arrayPos = [];
-    var arrayNormal = [];
-    var arrayUv = [];
-    var arrayUv2 = [];
-    var arrayColor = [];
-    var arrayMatricesIndices = [];
-    var arrayMatricesWeights = [];
-    var arrayIndice = [];
-    var savedPosition = [];
-    var savedNormal = [];
-    var newMesh = new BABYLON.Mesh(meshName, scene);
-    var UVKind = true;
-    var UV2Kind = true;
-    var ColorKind = true;
-    var MatricesIndicesKind = true;
-    var MatricesWeightsKind = true;
-    var i;
-    var it;
-    var ite;
-    var iter;
 
-    for (i = 0; i != arrayObj.length ; i++) {
-        if (!arrayObj[i].isVerticesDataPresent([BABYLON.VertexBuffer.UVKind]))
-            UVKind = false;
-        if (!arrayObj[i].isVerticesDataPresent([BABYLON.VertexBuffer.UV2Kind]))
-            UV2Kind = false;
-        if (!arrayObj[i].isVerticesDataPresent([BABYLON.VertexBuffer.ColorKind]))
-            ColorKind = false;
-        if (!arrayObj[i].isVerticesDataPresent([BABYLON.VertexBuffer.MatricesIndicesKind]))
-            MatricesIndicesKind = false;
-        if (!arrayObj[i].isVerticesDataPresent([BABYLON.VertexBuffer.MatricesWeightsKind]))
-            MatricesWeightsKind = false;
-    }
-
-    for (i = 0; i != arrayObj.length ; i++) {
-        var ite = 0;
-        var iter = 0;
-        arrayPos[i] = arrayObj[i].getVerticesData(BABYLON.VertexBuffer.PositionKind);
-        arrayNormal[i] = arrayObj[i].getVerticesData(BABYLON.VertexBuffer.NormalKind);
-        if (UVKind)
-            arrayUv = arrayUv.concat(arrayObj[i].getVerticesData(BABYLON.VertexBuffer.UVKind));
-        if (UV2Kind)
-            arrayUv2 = arrayUv2.concat(arrayObj[i].getVerticesData(BABYLON.VertexBuffer.UV2Kind));
-        if (ColorKind)
-            arrayColor = arrayColor.concat(arrayObj[i].getVerticesData(BABYLON.VertexBuffer.ColorKind));
-        if (MatricesIndicesKind)
-            arrayMatricesIndices = arrayMatricesIndices.concat(arrayObj[i].getVerticesData(BABYLON.VertexBuffer.MatricesIndicesKind));
-        if (MatricesWeightsKind)
-            arrayMatricesWeights = arrayMatricesWeights.concat(arrayObj[i].getVerticesData(BABYLON.VertexBuffer.MatricesWeightsKind));
-
-        var maxValue = savedPosition.length / 3;
-
-        arrayObj[i].computeWorldMatrix(true);
-        var worldMatrix = arrayObj[i].getWorldMatrix();
-
-        while (ite < arrayPos[i].length) {
-            var vertex = new BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(arrayPos[i][ite], arrayPos[i][ite + 1], arrayPos[i][ite + 2]), worldMatrix);
-            savedPosition.push(vertex.x);
-            savedPosition.push(vertex.y);
-            savedPosition.push(vertex.z);
-            ite = ite + 3;
-        }
-        while (iter < arrayNormal[i].length) {
-            var vertex = new BABYLON.Vector3.TransformNormal(new BABYLON.Vector3(arrayNormal[i][iter], arrayNormal[i][iter + 1], arrayNormal[i][iter + 2]), worldMatrix);
-            savedNormal.push(vertex.x);
-            savedNormal.push(vertex.y);
-            savedNormal.push(vertex.z);
-            iter = iter + 3;
-        }
-        if (i > 0) {
-            var tmp = arrayObj[i].getIndices();
-            for (it = 0 ; it != tmp.length; it++) {
-                tmp[it] = tmp[it] + maxValue;
-            }
-            arrayIndice = arrayIndice.concat(tmp);
-        }
-        else {
-            arrayIndice = arrayObj[i].getIndices();
-        }
-
-        arrayObj[i].dispose(false);
-    }
-
-    newMesh.setVerticesData(savedPosition, BABYLON.VertexBuffer.PositionKind, false);
-    newMesh.setVerticesData(savedNormal, BABYLON.VertexBuffer.NormalKind, false);
-    if (arrayUv.length > 0)
-        newMesh.setVerticesData(arrayUv, BABYLON.VertexBuffer.UVKind, false);
-    if (arrayUv2.length > 0)
-        newMesh.setVerticesData(arrayUv, BABYLON.VertexBuffer.UV2Kind, false);
-    if (arrayColor.length > 0)
-        newMesh.setVerticesData(arrayUv, BABYLON.VertexBuffer.ColorKind, false);
-    if (arrayMatricesIndices.length > 0)
-        newMesh.setVerticesData(arrayUv, BABYLON.VertexBuffer.MatricesIndicesKind, false);
-    if (arrayMatricesWeights.length > 0)
-        newMesh.setVerticesData(arrayUv, BABYLON.VertexBuffer.MatricesWeightsKind, false);
-
-    newMesh.setIndices(arrayIndice);
-    return newMesh;
-};
 
 var animateCameraPositionAndRotation = function (freeCamera, fromPosition, toPosition,
                                                  fromRotation, toRotation, animEnded) {
