@@ -20,9 +20,9 @@ var GROUND_HEIGHT = ((ROWS*2)+2) * WALL_WIDTH; // 12
 // Are we inside the labyrinth or looking at the QR Code in zoom out?
 var birdsEyeView = false;
 var freeCamera, canvas, engine, mainScene;
-var camPositionInLabyrinth, camRotationInLabyrinth;
+var camPositionInLabyrinth = null, camRotationInLabyrinth = null;
 var ground;
-var mainWall;
+var mainWall, halfWall;
 
 // coordinate space: 0,0 is in the middle of the ground
 
@@ -72,6 +72,15 @@ function createRoom(roomNumber, doors) {
         var wall = mainWall.clone("wall-"+roomNumber+"-1");
         wall.position = wallPosition.clone();
         wall.position.z += 13;
+    } else {
+        wall = halfWall.clone("wall-"+roomNumber+"-1.1");
+        wall.position = wallPosition.clone();
+        wall.position.z += 13;
+        wall.position.x -= 5;
+        wall = halfWall.clone("wall-"+roomNumber+"-1.2");
+        wall.position = wallPosition.clone();
+        wall.position.z += 13;
+        wall.position.x += 5;
     }
 
     if (!doors[1]) {
@@ -79,6 +88,17 @@ function createRoom(roomNumber, doors) {
         wall.position = wallPosition.clone();
         wall.position.x += 11.25;
         wall.position.z += 6.5;
+        wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
+    } else {
+        wall = halfWall.clone("wall-"+roomNumber+"-2.1");
+        wall.position = wallPosition.clone();
+        wall.position.x += 8.65;
+        wall.position.z += 11;
+        wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
+        wall = halfWall.clone("wall-"+roomNumber+"-2.2");
+        wall.position = wallPosition.clone();
+        wall.position.x += 13.85;
+        wall.position.z += 2;
         wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
     }
 
@@ -94,6 +114,15 @@ function createRoom(roomNumber, doors) {
         wall = mainWall.clone("wall-"+roomNumber+"-4");
         wall.position = wallPosition.clone();
         wall.position.z -= 13;
+    } else {
+        wall = halfWall.clone("wall-"+roomNumber+"-4.1");
+        wall.position = wallPosition.clone();
+        wall.position.z -= 13;
+        wall.position.x -= 5;
+        wall = halfWall.clone("wall-"+roomNumber+"-4.2");
+        wall.position = wallPosition.clone();
+        wall.position.z -= 13;
+        wall.position.x += 5;
     }
 
     if (!doors[4]) {
@@ -109,6 +138,17 @@ function createRoom(roomNumber, doors) {
         wall.position = wallPosition.clone();
         wall.position.x -= 11.25;
         wall.position.z += 6.5;
+        wall.rotation.y = (Math.PI * 2 / 3);
+    } else {
+        wall = halfWall.clone("wall-"+roomNumber+"-6.1");
+        wall.position = wallPosition.clone();
+        wall.position.x -= 8.65;
+        wall.position.z += 11;
+        wall.rotation.y = (Math.PI * 2 / 3);
+        wall = halfWall.clone("wall-"+roomNumber+"-6.2");
+        wall.position = wallPosition.clone();
+        wall.position.x -= 13.85;
+        wall.position.z += 2;
         wall.rotation.y = (Math.PI * 2 / 3);
     }
 
@@ -133,7 +173,7 @@ function createMaze(nameOfYourGirlFriend) {
     //scene.gravity = new BABYLON.Vector3(0, -0.8, 0);
     scene.collisionsEnabled = true;
 
-    freeCamera = new BABYLON.FreeCamera("free", new BABYLON.Vector3(0, 5, 0), scene);
+    freeCamera = new BABYLON.UniversalCamera("UniversalCamera", new BABYLON.Vector3(0, 5, 0), scene);
     freeCamera.minZ = 1;
     freeCamera.checkCollisions = true;
     freeCamera.applyGravity = true;
@@ -226,6 +266,11 @@ function createMaze(nameOfYourGirlFriend) {
     mainWall.checkCollisions = true;
     mainWall.setEnabled(false);
 
+    halfWall  = BABYLON.MeshBuilder.CreateBox("halfWall", {width:4, height:8, depth:2}, scene);
+    halfWall.material = cubeWallMaterial;
+    halfWall.checkCollisions = true;
+    halfWall.setEnabled(false);
+
 
     var cube, top;
     var cubesCollection = [];
@@ -299,19 +344,26 @@ function createMaze(nameOfYourGirlFriend) {
         if (event.keyCode === 32) {
             if (!birdsEyeView) {
                 birdsEyeView = true;
-                // Saving current position & rotation in the labyrinth
-                camPositionInLabyrinth = freeCamera.position;
-                camRotationInLabyrinth = freeCamera.rotation;
+                // do we aleady have a saved position?
+                if (camPositionInLabyrinth == null) {
+                    // Saving current position & rotation in the labyrinth
+                    camPositionInLabyrinth = freeCamera.position;
+                    camRotationInLabyrinth = freeCamera.rotation;
+                }
+                // animate up in space
                 animateCameraPositionAndRotation(freeCamera, freeCamera.position,
-                    new BABYLON.Vector3(0, 300, 0),
+                    new BABYLON.Vector3(0, 250, 0),
                     freeCamera.rotation,
                     //new BABYLON.Vector3(1.4912565104551518, -1.5709696842019767, freeCamera.rotation.z));
-                    new BABYLON.Vector3(Math.PI / 2, 0, 0));
+                    new BABYLON.Vector3(Math.PI / 2, 0, 0),
+                    null);
             }
             else {
                 birdsEyeView = false;
+                // animate back down
                 animateCameraPositionAndRotation(freeCamera, freeCamera.position,
-                    camPositionInLabyrinth, freeCamera.rotation, camRotationInLabyrinth);
+                    camPositionInLabyrinth, freeCamera.rotation, camRotationInLabyrinth, animateCameraPositionAndRotationEnd);
+                
             }
             freeCamera.applyGravity = !birdsEyeView;
         }
@@ -330,8 +382,76 @@ function createMaze(nameOfYourGirlFriend) {
     return scene;
 };
 
+function createGameControls() {
+
+    var controlsTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+    
+    // make a stack panel for the center buttons
+    var panel = new BABYLON.GUI.StackPanel();
+    panel.isVertical = false;
+    controlsTexture.addControl(panel);
+
+    var button = BABYLON.GUI.Button.CreateSimpleButton("exit", "exit");
+    button.width = "100px";
+    button.height = "40px";
+    button.color = "white";
+    button.background = "grey";
+    button.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+    button.onPointerClickObservable.add(function () {
+        location.reload();
+    });
+    panel.addControl(button);
+
+    button = BABYLON.GUI.Button.CreateSimpleButton("goto", "goto room");
+    button.width = "100px";
+    button.height = "40px";
+    button.color = "white";
+    button.background = "grey";
+    button.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+    button.onPointerClickObservable.add(function () {
+        gotoRoom();
+    });
+    panel.addControl(button);
+
+
+}
+
+var animateCameraPositionAndRotationEnd = function () {
+    // did we make it back ?
+    if (freeCamera.position.equals(camPositionInLabyrinth)) {
+        // clear this out, we successfullly animated back to our start position.
+        camPositionInLabyrinth = null;
+    }
+};
+
+function gotoRoom() {
+    document.getElementById("dialog-form").className = "onScreen";
+    document.getElementById("dialog-form").title = "goto room";
+    document.getElementById("form-label").innerText = "Room number:";
+    document.getElementById("form-value").value = "";
+
+    $("#dialog-form").dialog({
+        autoOpen: true,
+        height: 300,
+        width: 350,
+        modal: true,
+        buttons: {
+            "Go": function () {
+
+                freeCamera.position = getCenterOfRoom($("#form-value").val())
+                freeCamera.position.y = 2;
+            
+                // close the new game dialog
+                $(this).dialog("close");                
+            }
+        }
+    });    
+}
+
 function newGame() {
     document.getElementById("dialog-form").className = "onScreen";
+    document.getElementById("dialog-form").title = "new game";
+    document.getElementById("form-label").innerText = "Player name:";
 
     $("#dialog-form").dialog({
         autoOpen: true,
@@ -340,18 +460,25 @@ function newGame() {
         modal: true,
         buttons: {
             "Create": function () {
-                //Creating scene
-                mainScene = createMaze($("#name").val());
+                // create the main maze scene
+                mainScene = createMaze($("#form-value").val());
 
+                // attach the canvas to the camera
                 mainScene.activeCamera.attachControl(canvas);
+
+                // create the game controls
+                createGameControls();
 
                 // Once the scene is loaded, just register a render loop to render it
                 engine.runRenderLoop(function () {
                     mainScene.render();
                 });
 
+                // now put it all onscreen
                 canvas.className = "offScreen onScreen";
-                $(this).dialog("close");
+                
+                // close the new game dialog
+                $(this).dialog("close");                
                 document.getElementById("new-game").blur();
             }
         }
@@ -367,10 +494,10 @@ window.onload = function () {
     if (!BABYLON.Engine.isSupported()) {
         window.alert('Browser not supported');
     } else {
-        // Babylon
+        // create the engine, note: the canvas starts hidden (offScreen / scale(0))
         engine = new BABYLON.Engine(canvas, true);
 
-        // Resize
+        // add a resize listener
         window.addEventListener("resize", function () {
             engine.resize();
         });
@@ -479,7 +606,7 @@ var mergeMeshes = function (meshName, arrayObj, scene) {
 };
 
 var animateCameraPositionAndRotation = function (freeCamera, fromPosition, toPosition,
-                                                 fromRotation, toRotation) {
+                                                 fromRotation, toRotation, animEnded) {
 
     var animCamPosition = new BABYLON.Animation("animCam", "position", 30,
                               BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
@@ -514,5 +641,11 @@ var animateCameraPositionAndRotation = function (freeCamera, fromPosition, toPos
     freeCamera.animations.push(animCamPosition);
     freeCamera.animations.push(animCamRotation);
 
-    mainScene.beginAnimation(freeCamera, 0, 100, false);
+    mainScene.beginAnimation(
+        freeCamera,
+        0, 
+        100, 
+        false, 
+        1.0, 
+        animEnded);
 };
