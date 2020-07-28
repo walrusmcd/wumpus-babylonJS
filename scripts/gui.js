@@ -22,6 +22,10 @@ var freeCamera, canvas, engine, mainScene;
 var camPositionInLabyrinth = null, camRotationInLabyrinth = null;
 var ground;
 var mainWall, halfWall;
+// game text controls
+var textCoins, textScore, textRoomNumber, textStatus;
+
+var gameControl;
 
 // coordinate space: 0,0 is in the middle of the entire ground space
 function getCenterOfRoom(roomNumber){
@@ -381,33 +385,93 @@ function createGameControls() {
     var controlsTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
     
     // make a stack panel for the center buttons
-    var panel = new BABYLON.GUI.StackPanel();
-    panel.isVertical = false;
-    controlsTexture.addControl(panel);
+    // make a grid for the center buttons
+    var grid = new BABYLON.GUI.Grid();
+    grid.addColumnDefinition(100, true);
+    grid.addColumnDefinition(100, true);
+    grid.addColumnDefinition(100, true);
+    grid.addRowDefinition(0.5);
+    grid.addRowDefinition(0.5);
+    grid.width = "300px";
+    grid.height = "80px";
+    grid.background = "grey";
+    grid.color = "white";
+    grid.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+    grid.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    controlsTexture.addControl(grid);
 
     var button = BABYLON.GUI.Button.CreateSimpleButton("exit", "exit");
-    button.width = "100px";
-    button.height = "40px";
-    button.color = "white";
-    button.background = "grey";
-    button.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
     button.onPointerClickObservable.add(function () {
         location.reload();
     });
-    panel.addControl(button);
+    grid.addControl(button, 1, 0);
 
     button = BABYLON.GUI.Button.CreateSimpleButton("goto", "goto room");
-    button.width = "100px";
-    button.height = "40px";
-    button.color = "white";
-    button.background = "grey";
-    button.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
     button.onPointerClickObservable.add(function () {
         gotoRoom();
     });
-    panel.addControl(button);
+    grid.addControl(button, 1, 1);
 
+    button = BABYLON.GUI.Button.CreateSimpleButton("fire", "fire arrow");
+    grid.addControl(button, 0, 0);
 
+    button = BABYLON.GUI.Button.CreateSimpleButton("buy-s", "buy a secret");
+    grid.addControl(button, 0, 1);
+
+    button = BABYLON.GUI.Button.CreateSimpleButton("buy-a", "buy arrows");
+    grid.addControl(button, 0, 2);
+
+    // make a grid for the right hand status panel
+    grid = new BABYLON.GUI.Grid();
+    grid.addColumnDefinition(100, true);
+    grid.addColumnDefinition(100, true);
+    grid.addColumnDefinition(100, true);
+    grid.addRowDefinition(0.5);
+    grid.addRowDefinition(0.5);
+    grid.width = "300px";
+    grid.height = "80px";
+    grid.background = "grey";
+    grid.color = "white";
+    grid.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+    grid.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    controlsTexture.addControl(grid);
+
+    var text = new BABYLON.GUI.TextBlock();
+    text.text = "coins"
+    grid.addControl(text, 0, 0);  // row, col
+
+    textCoins = new BABYLON.GUI.TextBlock();
+    grid.addControl(textCoins, 1, 0);  // row, col
+
+    text = new BABYLON.GUI.TextBlock();
+    text.text = "score"
+    grid.addControl(text, 0, 1);  // row, col
+
+    textScore = new BABYLON.GUI.TextBlock();
+    grid.addControl(textScore, 1, 1);  // row, col
+
+    text = new BABYLON.GUI.TextBlock();
+    text.text = "room#"
+    grid.addControl(text, 0, 2);  // row, col
+
+    textRoomNumber = new BABYLON.GUI.TextBlock();
+    grid.addControl(textRoomNumber, 1, 2);  // row, col
+
+    // and now for the bottom left status panel
+    grid = new BABYLON.GUI.Grid();
+    grid.addColumnDefinition(300, true);
+    grid.addRowDefinition(0.5);
+    grid.addRowDefinition(0.5);
+    grid.width = "300px";
+    grid.height = "80px";
+    grid.background = "grey";
+    grid.color = "white";
+    grid.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+    grid.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    controlsTexture.addControl(grid);
+
+    textStatus = new BABYLON.GUI.TextBlock();
+    grid.addControl(textStatus, 1, 0);  // row, col
 }
 
 var animateCameraPositionAndRotationEnd = function () {
@@ -442,6 +506,37 @@ function gotoRoom() {
     });    
 }
 
+function getRoomNumber(position) {
+    var minD = GROUND_WIDTH+GROUND_HEIGHT, minRoom;
+    // find what center we are closest too
+    for (var roomNum = 1; roomNum <= NUMBER_OF_ROOMS; roomNum++) {
+        var roomPosition  = getCenterOfRoom(roomNum);
+        var d = BABYLON.Vector3.Distance(roomPosition, position);
+        if (d < minD) {
+            minD = d;
+            minRoom = roomNum;
+        }
+    }
+    return minRoom;
+}
+
+function gameLoopWorker() {
+    // what room is the player in ?
+    var roomNum = getRoomNumber(freeCamera.position);
+
+    // did we just change rooms?
+    if (gameControl.gameLocations.playerRoomNumber != roomNum) {
+        // change rooms !
+        gameControl.movePlayerToRoom(roomNum);
+    }
+
+    // update the game controls
+    textCoins.text = gameControl.player.goldCoins.toString();
+    textScore.text = gameControl.player.GetCurrentScore().toString();
+    textRoomNumber.text = gameControl.gameLocations.playerRoomNumber.toString();
+    textStatus.text = gameControl.statusText;
+}
+
 function newGame() {
     document.getElementById("dialog-form").className = "onScreen";
     document.getElementById("dialog-form").title = "new game";
@@ -454,6 +549,9 @@ function newGame() {
         modal: true,
         buttons: {
             "go": function () {
+                // create the wumpus main objects (game control manages them all)
+                gameControl = new GameControl();
+
                 // create the main maze scene
                 mainScene = createMaze($("#form-value").val());
 
@@ -467,6 +565,9 @@ function newGame() {
                 var randomRoom = (Math.random() * 30) + 1;
                 freeCamera.position = getCenterOfRoom(randomRoom)
                 freeCamera.position.y = 2;
+
+                // setup the game loop worker (3 times a second)
+                window.setInterval(gameLoopWorker, 300);
 
                 // Once the scene is loaded, just register a render loop to render it
                 engine.runRenderLoop(function () {
