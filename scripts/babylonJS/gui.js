@@ -1,7 +1,4 @@
-﻿/// <reference path="babylon.js" />
-/// <reference path="cave.js" />
-
-"use strict";
+﻿"use strict";
 
 // Size of a cube/block
 var BLOCK_SIZE = 8;
@@ -21,7 +18,8 @@ var birdsEyeView = false;
 var freeCamera, canvas, engine, scene;
 var camPositionInLabyrinth = null, camRotationInLabyrinth = null;
 var ground;
-var mainWall, halfWall;
+var mainWall, halfWall, doorWall;
+var doorWalls = [];
 // game text controls
 var textCoins, textScore, textRoomNumber, textStatus;
 
@@ -74,20 +72,22 @@ function createRoom(roomNumber, doors) {
     if (!doors[0]) {
         // clone a wall
         var wall = mainWall.clone("wall-"+roomNumber+"-1");
-        // clone the center position
         wall.position = wallPosition.clone();
         // slide it up
         wall.position.z += 13;
     } else {
         // clone a half wall
         wall = halfWall.clone("wall-"+roomNumber+"-1.1");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.z += 13;
         wall.position.x -= 5;
-        // clone a half wall
+        // clone a door
+        wall = doorWall.clone();
+        doorWalls.push(wall)
+        wall.position = wallPosition.clone();
+        wall.position.z += 13;
+        // clone another half wall
         wall = halfWall.clone("wall-"+roomNumber+"-1.2");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.z += 13;
         wall.position.x += 5;
@@ -96,20 +96,26 @@ function createRoom(roomNumber, doors) {
     if (!doors[1]) {
         // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-2");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x += 11.25;
         wall.position.z += 6.5;
         wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
     } else {
+        // clone a half wall
         wall = halfWall.clone("wall-"+roomNumber+"-2.1");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x += 8.65;
         wall.position.z += 11;
         wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
+        // clone a door
+        wall = doorWall.clone();
+        doorWalls.push(wall)
+        wall.position = wallPosition.clone();
+        wall.position.x += 11.25;
+        wall.position.z += 6.5;
+        wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
+        // clone another half wall
         wall = halfWall.clone("wall-"+roomNumber+"-2.2");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x += 13.85;
         wall.position.z += 2;
@@ -118,7 +124,6 @@ function createRoom(roomNumber, doors) {
     if (!doors[2]) {
         // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-3");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x += 11.25;
         wall.position.z -= 6.5;
@@ -127,18 +132,22 @@ function createRoom(roomNumber, doors) {
     if (!doors[3]) {
         // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-4");
-        // clone the center position
         wall.position = wallPosition.clone();
         // slide it down
         wall.position.z -= 13;
     } else {
+        // clone a half wall
         wall = halfWall.clone("wall-"+roomNumber+"-4.1");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.z -= 13;
         wall.position.x -= 5;
+        // clone a door
+        wall = doorWall.clone();
+        doorWalls.push(wall)
+        wall.position = wallPosition.clone();
+        wall.position.z -= 13;
+        // clone another half wall
         wall = halfWall.clone("wall-"+roomNumber+"-4.2");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.z -= 13;
         wall.position.x += 5;
@@ -155,25 +164,40 @@ function createRoom(roomNumber, doors) {
     if (!doors[5]) {
         // clone a wall
         wall = mainWall.clone("wall-"+roomNumber+"-6");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x -= 11.25;
         wall.position.z += 6.5;
         wall.rotation.y = (Math.PI * 2 / 3);
     } else {
+        // clone a half wall
         wall = halfWall.clone("wall-"+roomNumber+"-6.1");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x -= 8.65;
         wall.position.z += 11;
         wall.rotation.y = (Math.PI * 2 / 3);
+        // clone a door
+        wall = doorWall.clone();
+        doorWalls.push(wall)
+        wall.position = wallPosition.clone();
+        wall.position.x -= 11.25;
+        wall.position.z += 6.5;
+        wall.rotation.y = (Math.PI * 2 / 3);
+        // clone another half wall
         wall = halfWall.clone("wall-"+roomNumber+"-6.2");
-        // clone the center position
         wall.position = wallPosition.clone();
         wall.position.x -= 13.85;
         wall.position.z += 2;
         wall.rotation.y = (Math.PI * 2 / 3);
     }
+}
+
+var mainMusic, pitMusic, wumpusMusic;
+function playSound() {
+    // Load the sound and play it automatically once ready
+    mainMusic = new BABYLON.Sound("Music", "/assets/POL-cave-dripping.wav", scene, null, {
+        loop: true,
+        autoplay: true
+    });
 }
 
 function createScene() {
@@ -291,6 +315,13 @@ function createScene() {
     halfWall.material = cubeWallMaterial;
     halfWall.checkCollisions = true;
     halfWall.setEnabled(false);
+
+    doorWall  = BABYLON.MeshBuilder.CreateBox("doorWall", {width:6, height:8, depth:2}, scene);
+    doorWall.material = new BABYLON.StandardMaterial("door-material", scene);
+    doorWall.material.diffuseColor  = new BABYLON.Color3(0.1, 0.1, 0.1);
+    doorWall.material.emissiveColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+    doorWall.checkCollisions = false;
+    doorWall.setEnabled(false);
 
 
     var cube, top;
@@ -571,6 +602,7 @@ function createPits(roomNumber) {
     pitMeshes.push(pit);
     var material = new BABYLON.StandardMaterial("pit-material", scene);
     material.diffuseColor  = new BABYLON.Color3(0.1, 0.1, 0.1);
+    material.emissiveColor = new BABYLON.Color3(0.1, 0.1, 0.1);
     pit.material = material;
     pit.position = getCenterOfRoom(roomNumber);
     // it has to be "just" above the ground, or it blends in to the ground.
@@ -614,6 +646,9 @@ function newGame() {
 
                 // create the main maze scene
                 createScene();
+
+                // play some fun sounds
+                playSound();
 
                 // attach the canvas to the camera
                 scene.activeCamera.attachControl(canvas);

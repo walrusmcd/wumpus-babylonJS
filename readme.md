@@ -44,3 +44,10 @@ This github project is also linked to a Azure static website build process.  It 
  - At the start of the game you are dropped into a random room.
  - You move around the maze using the up-down-left-right keys.   
  - You can zoom out for a bird-eye-view by tapping the space key.
+
+## adding sound
+
+here is a cool link to a set of websites you can grab free game sound from.   Or just record your own !   https://blog.felgo.com/game-resources/free-music-for-games 
+
+the cave sound effects in this github repo are Sound Effects from [PlayOnLoop.com](https://www.playonloop.com/sound-effects-for-videos/)
+Licensed under Creative Commons by Attribution 4.0 .   The bear growls came from [here](https://www.freesfx.co.uk/Category/Bears/511).
