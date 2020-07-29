@@ -5,13 +5,10 @@ var BLOCK_SIZE = 8;
 var ROOM_WIDTH = 32;
 var WALL_WIDTH = 16;
 var WALL_HEIGHT = 8;
-var ROWS = 5;
-var COLS = 6;
 var MARGIN = 1;
-var NUMBER_OF_ROOMS = 30;
 
-var GROUND_WIDTH = ((COLS*2)-1) * WALL_WIDTH;  // 11
-var GROUND_HEIGHT = ((ROWS*2)+2) * WALL_WIDTH; // 12
+var GROUND_WIDTH = ((Cave.COLS*2)-1) * WALL_WIDTH;  // 11
+var GROUND_HEIGHT = ((Cave.ROWS*2)+2) * WALL_WIDTH; // 12
 
 // Are we inside the labyrinth or looking at the QR Code in zoom out?
 var birdsEyeView = false;
@@ -30,8 +27,8 @@ function getCenterOfRoom(roomNumber){
     // js is all floats, make sure someone doesn't pass us in a float (round down)
     roomNumber = Math.floor(roomNumber);
     // which column and row are we in?
-    var col = ((roomNumber-1) % COLS) + 1;
-    var row = Math.floor((roomNumber-1) / COLS) + 1;
+    var col = Cave.getRoomCol(roomNumber);
+    var row = Cave.getRoomRow(roomNumber);
     // these are from birdseye (left + top)
     var groundLeft = GROUND_WIDTH / 2 * -1;
     var groupTop = GROUND_HEIGHT / 2;
@@ -62,6 +59,15 @@ function getCenterOfRoom(roomNumber){
     return position;
 }
 
+function cloneWall(wall, position = null, deltaX = null, deltaZ = null, rotationY = null) {
+    var clone = wall.clone();
+    clone.position = position.clone();
+    clone.position.x += deltaX;
+    clone.position.z += deltaZ;
+    if (rotationY != null)
+        clone.rotation.y = rotationY;
+}
+
 // makes 6 walls, used "half walls" if there is a door
 function createRoom(roomNumber, doors) {
     // get the center of the room
@@ -71,123 +77,56 @@ function createRoom(roomNumber, doors) {
     // 0 is the "top" wall
     if (!doors[0]) {
         // clone a wall
-        var wall = mainWall.clone("wall-"+roomNumber+"-1");
-        wall.position = wallPosition.clone();
-        // slide it up
-        wall.position.z += 13;
+        cloneWall(mainWall, wallPosition, 0, 13);
     } else {
         // clone a half wall
-        wall = halfWall.clone("wall-"+roomNumber+"-1.1");
-        wall.position = wallPosition.clone();
-        wall.position.z += 13;
-        wall.position.x -= 5;
+        cloneWall(halfWall, wallPosition, -5, 13);
         // clone a door
-        wall = doorWall.clone();
-        doorWalls.push(wall)
-        wall.position = wallPosition.clone();
-        wall.position.z += 13;
+        doorWalls.push(cloneWall(doorWall, wallPosition, 0, 13));
         // clone another half wall
-        wall = halfWall.clone("wall-"+roomNumber+"-1.2");
-        wall.position = wallPosition.clone();
-        wall.position.z += 13;
-        wall.position.x += 5;
+        cloneWall(halfWall, wallPosition, 5, 13);
     }
     // 1 is the next wall on the right (clockwise)
     if (!doors[1]) {
-        // clone a wall
-        wall = mainWall.clone("wall-"+roomNumber+"-2");
-        wall.position = wallPosition.clone();
-        wall.position.x += 11.25;
-        wall.position.z += 6.5;
-        wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
+        // clone a wall, hexagon, each side is 120(d)
+        cloneWall(mainWall, wallPosition, 11.25, 6.5, Math.PI / 3);
     } else {
         // clone a half wall
-        wall = halfWall.clone("wall-"+roomNumber+"-2.1");
-        wall.position = wallPosition.clone();
-        wall.position.x += 8.65;
-        wall.position.z += 11;
-        wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
+        cloneWall(halfWall, wallPosition, 8.65, 11, Math.PI / 3);
         // clone a door
-        wall = doorWall.clone();
-        doorWalls.push(wall)
-        wall.position = wallPosition.clone();
-        wall.position.x += 11.25;
-        wall.position.z += 6.5;
-        wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
+        doorWalls.push(cloneWall(doorWall, wallPosition, 11.25, 6.5, Math.PI / 3));
         // clone another half wall
-        wall = halfWall.clone("wall-"+roomNumber+"-2.2");
-        wall.position = wallPosition.clone();
-        wall.position.x += 13.85;
-        wall.position.z += 2;
-        wall.rotation.y = (Math.PI / 3); // hexagon, each side is 120(d)
+        cloneWall(halfWall, wallPosition, 13.85, 2, Math.PI / 3);
     }
     if (!doors[2]) {
         // clone a wall
-        wall = mainWall.clone("wall-"+roomNumber+"-3");
-        wall.position = wallPosition.clone();
-        wall.position.x += 11.25;
-        wall.position.z -= 6.5;
-        wall.rotation.y = (Math.PI * 2 / 3);
+        cloneWall(mainWall, wallPosition, 11.25, -6.5, Math.PI * 2 / 3);
     }
     if (!doors[3]) {
         // clone a wall
-        wall = mainWall.clone("wall-"+roomNumber+"-4");
-        wall.position = wallPosition.clone();
-        // slide it down
-        wall.position.z -= 13;
+        cloneWall(mainWall, wallPosition, 0, -13);
     } else {
         // clone a half wall
-        wall = halfWall.clone("wall-"+roomNumber+"-4.1");
-        wall.position = wallPosition.clone();
-        wall.position.z -= 13;
-        wall.position.x -= 5;
+        cloneWall(halfWall, wallPosition, -5, -13);
         // clone a door
-        wall = doorWall.clone();
-        doorWalls.push(wall)
-        wall.position = wallPosition.clone();
-        wall.position.z -= 13;
+        doorWalls.push(cloneWall(doorWall, wallPosition, 0, -13));
         // clone another half wall
-        wall = halfWall.clone("wall-"+roomNumber+"-4.2");
-        wall.position = wallPosition.clone();
-        wall.position.z -= 13;
-        wall.position.x += 5;
+        cloneWall(halfWall, wallPosition, 5, -13);
     }
     if (!doors[4]) {
         // clone a wall
-        wall = mainWall.clone("wall-"+roomNumber+"-5");
-        // clone the center position
-        wall.position = wallPosition.clone();
-        wall.position.x -= 11.25; 
-        wall.position.z -= 6.5;
-        wall.rotation.y = (Math.PI / 3); 
+        cloneWall(mainWall, wallPosition, -11.25, -6.5, Math.PI / 3);
     }
     if (!doors[5]) {
         // clone a wall
-        wall = mainWall.clone("wall-"+roomNumber+"-6");
-        wall.position = wallPosition.clone();
-        wall.position.x -= 11.25;
-        wall.position.z += 6.5;
-        wall.rotation.y = (Math.PI * 2 / 3);
+        cloneWall(mainWall, wallPosition, -11.25, 6.5, Math.PI * 2 / 3);
     } else {
         // clone a half wall
-        wall = halfWall.clone("wall-"+roomNumber+"-6.1");
-        wall.position = wallPosition.clone();
-        wall.position.x -= 8.65;
-        wall.position.z += 11;
-        wall.rotation.y = (Math.PI * 2 / 3);
+        cloneWall(halfWall, wallPosition, -8.65, 11, Math.PI * 2 / 3);
         // clone a door
-        wall = doorWall.clone();
-        doorWalls.push(wall)
-        wall.position = wallPosition.clone();
-        wall.position.x -= 11.25;
-        wall.position.z += 6.5;
-        wall.rotation.y = (Math.PI * 2 / 3);
+        doorWalls.push(cloneWall(doorWall, wallPosition, -11.25, 6.5, Math.PI * 2 / 3));
         // clone another half wall
-        wall = halfWall.clone("wall-"+roomNumber+"-6.2");
-        wall.position = wallPosition.clone();
-        wall.position.x -= 13.85;
-        wall.position.z += 2;
-        wall.rotation.y = (Math.PI * 2 / 3);
+        cloneWall(halfWall, wallPosition, -13.85, 2, Math.PI * 2 / 3);
     }
 }
 
@@ -270,41 +209,11 @@ function createScene() {
     light1.diffuse = new BABYLON.Color3(1, 0.7333333333333333, 0.3568627450980392);
     light1.intensity = 0.2;
 
-    // create a standard material for the top (from a color)
-    var cubeTopMaterial = new BABYLON.StandardMaterial("cubeTop", scene);
-    cubeTopMaterial.emissiveColor = new BABYLON.Color3(0.1, 0.1, 0.15);
-
     // create a standard material for the side walls (from 3 textures)
     var cubeWallMaterial = new BABYLON.StandardMaterial("cubeWalls", scene);
     cubeWallMaterial.emissiveTexture = new BABYLON.Texture("textures/masonry-wall-texture.jpg", scene);
     cubeWallMaterial.bumpTexture = new BABYLON.Texture("textures/masonry-wall-bump-map.jpg", scene);
     cubeWallMaterial.specularTexture = new BABYLON.Texture("textures/masonry-wall-normal-map.jpg", scene);
-
-    // and a multi material from the side walls and the top (used by the solocube)
-    var cubeMultiMat = new BABYLON.MultiMaterial("cubeMulti", scene);
-    cubeMultiMat.subMaterials.push(cubeTopMaterial);
-    cubeMultiMat.subMaterials.push(cubeWallMaterial);
-
-    var soloCube = BABYLON.Mesh.CreateBox("mainCube", BLOCK_SIZE, scene);
-    soloCube.subMeshes = [];
-    soloCube.subMeshes.push(new BABYLON.SubMesh(0, 0, 4, 0, 6, soloCube));
-    soloCube.subMeshes.push(new BABYLON.SubMesh(1, 4, 20, 6, 30, soloCube));
-    // same as soloCube.rotation.x = -Math.PI / 2; 
-    // but cannon.js needs rotation to be set via Quaternion
-    soloCube.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(0, -Math.PI / 2, 0);
-    soloCube.material = cubeMultiMat;
-    soloCube.checkCollisions = true;
-    soloCube.setEnabled(false);
-
-    var topCube = BABYLON.Mesh.CreatePlane("ground", BLOCK_SIZE, scene, false);
-    topCube.material = cubeTopMaterial;
-    topCube.rotation.x = Math.PI / 2;
-    topCube.setEnabled(false);
-
-    var mainCube = BABYLON.Mesh.CreateBox("mainCube", BLOCK_SIZE, scene);
-    mainCube.material = cubeWallMaterial;
-    mainCube.checkCollisions = true;
-    mainCube.setEnabled(false);
 
     mainWall  = BABYLON.MeshBuilder.CreateBox("wall", {width:WALL_WIDTH, height:8, depth:2}, scene);
     mainWall.material = cubeWallMaterial;
@@ -323,55 +232,19 @@ function createScene() {
     doorWall.checkCollisions = false;
     doorWall.setEnabled(false);
 
-
-    var cube, top;
-    var cubesCollection = [];
-    var cubesTopCollection = [];
-    var cubeOnLeft, cubeOnRight, cubeOnUp, cubeOnDown;
-
-/*    for (var row = 0; row < mCount; row++) {
-        for (var col = 0; col < mCount; col++) {
-            if (qrcode._oQRCode.isDark(row, col)) {
-                // figure out the position for this cube
-                var cubePosition = new BABYLON.Vector3(BLOCK_SIZE / 2 + (row - (mCount / 2)) * BLOCK_SIZE,
-                                                        BLOCK_SIZE / 2,
-                                                        BLOCK_SIZE / 2 + (col - (mCount / 2)) * BLOCK_SIZE);
-
-                cubeOnLeft = cubeOnRight = cubeOnUp = cubeOnDown = false;
-                if (col > 0) {
-                    cubeOnLeft = qrcode._oQRCode.isDark(row, col - 1)
-                }
-                if (col < mCount - 1) {
-                    cubeOnRight = qrcode._oQRCode.isDark(row, col + 1)
-                }
-                if (row > 0) {
-                    cubeOnUp = qrcode._oQRCode.isDark(row - 1, col)
-                }
-                if (row < mCount - 1) {
-                    cubeOnDown = qrcode._oQRCode.isDark(row + 1, col)
-                }
-                if (cubeOnLeft || cubeOnRight || cubeOnUp || cubeOnDown) {
-                    cube = mainCube.clone("Cube" + row + col);
-                    cube.position = cubePosition.clone();
-                    top = topCube.clone("TopCube" + row + col);
-                    top.position = cubePosition.clone();
-                    top.position.y = BLOCK_SIZE + 0.05;
-                    cubesCollection.push(cube);
-                    cubesTopCollection.push(top);
-                }
-                else {
-                    cube = soloCube.clone("SoloCube" + row + col);
-                    cube.position = cubePosition.clone();
-                    cube.setPhysicsState({ impostor: BABYLON.PhysicsEngine.BoxImpostor, mass: 2, friction: 0.4, restitution: 0.3 });
-                }
-            }
-        }
-    }*/
-
     var caveDoors = gameControl.gameLocations.cave.caveDoors;
-    for (var roomNum = 1; roomNum <= NUMBER_OF_ROOMS; roomNum++) {
+    // validate the cave
+    if (Cave.validateCave(caveDoors) == false)
+        window.alert("the cave failed validation!");
+    // build out all the rooms in the cave
+    for (var roomNum = 1; roomNum <= Cave.NUMBER_OF_ROOMS; roomNum++) {
         createRoom(roomNum, caveDoors[roomNum-1]);
     }
+
+    return scene;
+};
+
+function addInputListeners() {
 
     window.addEventListener("keydown", function (event) {
         // ascii 32 is the 'space' char
@@ -412,9 +285,7 @@ function createScene() {
             pickResult.pickedMesh.applyImpulse(dir.scale(50), pickResult.pickedPoint);
         }
     });
-
-    return scene;
-};
+}
 
 function createGameControls() {
 
@@ -510,14 +381,6 @@ function createGameControls() {
     grid.addControl(textStatus, 1, 0);  // row, col
 }
 
-var animateCameraPositionAndRotationEnd = function () {
-    // did we make it back ?
-    if (freeCamera.position.equals(camPositionInLabyrinth)) {
-        // clear this out, we successfullly animated back to our start position.
-        camPositionInLabyrinth = null;
-    }
-};
-
 function gotoRoom() {
     document.getElementById("dialog-form").className = "onScreen";
     document.getElementById("dialog-form").title = "goto room";
@@ -545,7 +408,7 @@ function gotoRoom() {
 function getRoomNumber(position) {
     var minD = GROUND_WIDTH+GROUND_HEIGHT, minRoom;
     // find what center we are closest too
-    for (var roomNum = 1; roomNum <= NUMBER_OF_ROOMS; roomNum++) {
+    for (var roomNum = 1; roomNum <= Cave.NUMBER_OF_ROOMS; roomNum++) {
         var roomPosition  = getCenterOfRoom(roomNum);
         var d = BABYLON.Vector3.Distance(roomPosition, position);
         if (d < minD) {
@@ -568,7 +431,7 @@ function gameLoopWorker() {
 
     // update the game controls
     textCoins.text = gameControl.player.goldCoins.toString();
-    textScore.text = gameControl.player.GetCurrentScore().toString();
+    textScore.text = gameControl.player.getCurrentScore().toString();
     textRoomNumber.text = gameControl.gameLocations.playerRoomNumber.toString();
     textStatus.text = gameControl.statusText;
 }
@@ -647,6 +510,9 @@ function newGame() {
                 // create the main maze scene
                 createScene();
 
+                // add the input listeners
+                addInputListeners();
+
                 // play some fun sounds
                 playSound();
 
@@ -697,7 +563,15 @@ window.onload = function () {
     }
 };
 
-
+// this makes sure that we keep remembering our starting position 
+// until we finally animate our way back there
+var animateCameraPositionAndRotationEnd = function () {
+    // did we make it back ?
+    if (freeCamera.position.equals(camPositionInLabyrinth)) {
+        // clear this out, we successfullly animated back to our start position.
+        camPositionInLabyrinth = null;
+    }
+};
 
 var animateCameraPositionAndRotation = function (freeCamera, fromPosition, toPosition,
                                                  fromRotation, toRotation, animEnded) {

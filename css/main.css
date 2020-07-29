@@ -21,6 +21,10 @@ body {
     font-size: 62.5%;
 }
 
+a {
+    font-size: x-large;
+}
+
 label, input {
     display: block;
 }

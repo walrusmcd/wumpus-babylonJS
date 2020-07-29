@@ -40,11 +40,11 @@ class Player {
         this._numberOfTurns = num;
     }
 
-    KilledTheWumpus() {
+    killedTheWumpus() {
         this._killedTheWumpus = 1;
     }
 
-    GetCurrentScore() {
+    getCurrentScore() {
         return 100 
             - this._numberOfTurns 
             + this._goldCoins 
