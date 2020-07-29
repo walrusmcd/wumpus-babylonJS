@@ -3,8 +3,8 @@
 //
 class GameControl {
 
-    constructor() {
-        this._player = new Player();
+    constructor(playerName) {
+        this._player = new Player(playerName);
         this._gameLocations = new GameLocations();
         this._triviaManagement = new TriviaManagement();
         this._goldCoinsLeft = 100;

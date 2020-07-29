@@ -3,12 +3,17 @@
 //
 class Player {
 
-    constructor() {
+    constructor(playerName) {
         this._arrowCount = 0;
         this._goldCoins = 0;
         this._numberOfTurns = 0;
         this._currentScore = 0;
         this._killedTheWumpus = 0;
+        this._name = playerName;
+    }
+
+    get name() {
+        return this._name;
     }
 
     get arrowCount() {

@@ -18,7 +18,7 @@ var GROUND_HEIGHT = ((ROWS*2)+2) * WALL_WIDTH; // 12
 
 // Are we inside the labyrinth or looking at the QR Code in zoom out?
 var birdsEyeView = false;
-var freeCamera, canvas, engine, mainScene;
+var freeCamera, canvas, engine, scene;
 var camPositionInLabyrinth = null, camRotationInLabyrinth = null;
 var ground;
 var mainWall, halfWall;
@@ -29,6 +29,8 @@ var gameControl;
 
 // coordinate space: 0,0 is in the middle of the entire ground space
 function getCenterOfRoom(roomNumber){
+    // js is all floats, make sure someone doesn't pass us in a float (round down)
+    roomNumber = Math.floor(roomNumber);
     // which column and row are we in?
     var col = ((roomNumber-1) % COLS) + 1;
     var row = Math.floor((roomNumber-1) / COLS) + 1;
@@ -58,7 +60,7 @@ function getCenterOfRoom(roomNumber){
         zPos -= 13;
     }
     // x, y, z
-    var position = new BABYLON.Vector3(xPos, WALL_HEIGHT / 2, zPos);
+    var position = new BABYLON.Vector3(xPos, 0, zPos);
     return position;
 }
 
@@ -66,6 +68,8 @@ function getCenterOfRoom(roomNumber){
 function createRoom(roomNumber, doors) {
     // get the center of the room
     var wallPosition = getCenterOfRoom(roomNumber);
+    // the "center" of the wall is raised off the floor a bit
+    wallPosition.y = WALL_HEIGHT / 2;
     // 0 is the "top" wall
     if (!doors[0]) {
         // clone a wall
@@ -172,17 +176,15 @@ function createRoom(roomNumber, doors) {
     }
 }
 
-function createMaze(nameOfYourGirlFriend) {
+function createScene() {
     //number of module count or cube in width/height
     //var mCount = 33;
     // It needs a HTML element to work with
-    //var qrcode = new QRCode(document.createElement("div"), { width: 400, height: 400 });
-    //qrcode.makeCode(nameOfYourGirlFriend + ", I love you!");
     // needed to set the proper size of the playground
     //var mCount = qrcode._oQRCode.moduleCount;
     var mCount = 30;
 
-    var scene = new BABYLON.Scene(engine);
+    scene = new BABYLON.Scene(engine);
     var gravityVector = new BABYLON.Vector3(0,-9.81, 0);
     var physicsPlugin = new BABYLON.CannonJSPlugin();
     scene.enablePhysics(gravityVector, physicsPlugin);
@@ -196,6 +198,9 @@ function createMaze(nameOfYourGirlFriend) {
     freeCamera.checkCollisions = true;
     freeCamera.applyGravity = true;
     freeCamera.ellipsoid = new BABYLON.Vector3(1, 1, 1);
+
+    // create the basics of the environment
+    scene.createDefaultEnvironment({createSkybox: false, createGround:false});
 
     // Ground
     var groundMaterial = new BABYLON.StandardMaterial("groundMat", scene);
@@ -332,9 +337,9 @@ function createMaze(nameOfYourGirlFriend) {
         }
     }*/
 
-    var cave = cave1;
+    var caveDoors = gameControl.gameLocations.cave.caveDoors;
     for (var roomNum = 1; roomNum <= NUMBER_OF_ROOMS; roomNum++) {
-        createRoom(roomNum, cave[roomNum-1]);
+        createRoom(roomNum, caveDoors[roomNum-1]);
     }
 
     window.addEventListener("keydown", function (event) {
@@ -537,6 +542,61 @@ function gameLoopWorker() {
     textStatus.text = gameControl.statusText;
 }
 
+var wumpusMeshes;
+function createWumpus(roomNumber) {
+
+    BABYLON.SceneLoader.ImportMesh("", "/assets/", "seagulf.glb", scene, function (meshes, particleSystems, skeletons) {
+        wumpusMeshes = meshes;
+        var position = getCenterOfRoom(roomNumber);
+        wumpusMeshes[0].scaling = new BABYLON.Vector3(2, 2, 2);
+        wumpusMeshes[0].position = position.clone();
+        wumpusMeshes[1].scaling = new BABYLON.Vector3(0.6, 0.6, 0.6);
+        wumpusMeshes[1].position = position.clone();
+    });
+}
+
+var batsMeshes = [];
+function createBats(roomNumber) {
+
+    BABYLON.SceneLoader.ImportMesh("", "https://models.babylonjs.com/Channel9/", "Channel9.stl", scene, function (meshes, particleSystems, skeletons) {
+        batsMeshes.push(meshes[0]);
+        meshes[0].scaling = new BABYLON.Vector3(0.05, 0.05, 0.05);
+        meshes[0].position = getCenterOfRoom(roomNumber);
+    });
+}
+
+var pitMeshes = [];
+function createPits(roomNumber) {
+    var pit = BABYLON.MeshBuilder.CreateDisc("pit", {radius: 8}, scene);
+    pitMeshes.push(pit);
+    var material = new BABYLON.StandardMaterial("pit-material", scene);
+    material.diffuseColor  = new BABYLON.Color3(0.1, 0.1, 0.1);
+    pit.material = material;
+    pit.position = getCenterOfRoom(roomNumber);
+    // it has to be "just" above the ground, or it blends in to the ground.
+    pit.position.y = 0.1;
+    // rotate the disc so it looks flat on the floor
+    pit.rotation.x = Math.PI / 2;
+}
+
+// puts the player, wumpus, bats, and pits into rooms
+function putThingsInRooms() {
+    // put the player in their room
+    freeCamera.position = getCenterOfRoom(gameControl.gameLocations.playerRoomNumber)
+    freeCamera.position.y = 2;
+
+    // put the wumpus in their room
+    createWumpus(gameControl.gameLocations.wumpusRoomNumber);
+
+    // put 2 bats in random rooms
+    createBats(gameControl.gameLocations.getBatRoomNumber(0));
+    createBats(gameControl.gameLocations.getBatRoomNumber(1));
+
+    // put 2 bottomless pits in random rooms
+    createPits(gameControl.gameLocations.getPitRoomNumber(0));
+    createPits(gameControl.gameLocations.getPitRoomNumber(1));
+}
+
 function newGame() {
     document.getElementById("dialog-form").className = "onScreen";
     document.getElementById("dialog-form").title = "new game";
@@ -550,35 +610,34 @@ function newGame() {
         buttons: {
             "go": function () {
                 // create the wumpus main objects (game control manages them all)
-                gameControl = new GameControl();
+                gameControl = new GameControl($("#form-value").val());
 
                 // create the main maze scene
-                mainScene = createMaze($("#form-value").val());
+                createScene();
 
                 // attach the canvas to the camera
-                mainScene.activeCamera.attachControl(canvas);
+                scene.activeCamera.attachControl(canvas);
 
                 // create the game controls
                 createGameControls();
 
-                // put the player in a random room
-                var randomRoom = (Math.random() * 30) + 1;
-                freeCamera.position = getCenterOfRoom(randomRoom)
-                freeCamera.position.y = 2;
+                // setup everything in their rooms
+                putThingsInRooms();
 
                 // setup the game loop worker (3 times a second)
                 window.setInterval(gameLoopWorker, 300);
 
                 // Once the scene is loaded, just register a render loop to render it
                 engine.runRenderLoop(function () {
-                    mainScene.render();
+                    scene.render();
                 });
 
                 // now put it all onscreen
                 canvas.className = "offScreen onScreen";
                 
                 // close the new game dialog
-                $(this).dialog("close");                
+                $(this).dialog("close");
+                document.getElementById("new-game").blur();
             }
         }
     });
@@ -641,7 +700,7 @@ var animateCameraPositionAndRotation = function (freeCamera, fromPosition, toPos
     freeCamera.animations.push(animCamPosition);
     freeCamera.animations.push(animCamRotation);
 
-    mainScene.beginAnimation(
+    scene.beginAnimation(
         freeCamera,
         0, 
         100, 

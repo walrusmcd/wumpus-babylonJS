@@ -1,3 +1,7 @@
+//
+// this is the Cave object
+//
+
 var cave1 = [ 
   [false, false, true, false, false, false],
   [false, false, false, true, false, true],
@@ -30,3 +34,17 @@ var cave1 = [
   [false, false, true, false, true, true],
   [false, false, false, false, false, true]
 ];
+
+class Cave {
+
+  static getRandomRoomNumber() {
+    var randomRoom = (Math.random() * 30) + 1;
+    randomRoom = Math.floor(randomRoom);
+    return randomRoom;
+  }
+
+  get caveDoors() {
+    return cave1;
+  }
+
+}
