@@ -1,5 +1,5 @@
 ﻿/// <reference path="babylon.js" />
-/// <reference path="caves.js" />
+/// <reference path="cave.js" />
 
 "use strict";
 
