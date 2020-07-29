@@ -558,7 +558,7 @@ function createWumpus(roomNumber) {
 var batsMeshes = [];
 function createBats(roomNumber) {
 
-    BABYLON.SceneLoader.ImportMesh("", "https://models.babylonjs.com/Channel9/", "Channel9.stl", scene, function (meshes, particleSystems, skeletons) {
+    BABYLON.SceneLoader.ImportMesh("", "/assets/", "Channel9.stl", scene, function (meshes, particleSystems, skeletons) {
         batsMeshes.push(meshes[0]);
         meshes[0].scaling = new BABYLON.Vector3(0.05, 0.05, 0.05);
         meshes[0].position = getCenterOfRoom(roomNumber);
