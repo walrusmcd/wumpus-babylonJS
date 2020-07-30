@@ -66,6 +66,7 @@ function cloneWall(wall, position = null, deltaX = null, deltaZ = null, rotation
     clone.position.z += deltaZ;
     if (rotationY != null)
         clone.rotation.y = rotationY;
+    return clone;
 }
 
 // makes 6 walls, used "half walls" if there is a door
@@ -318,6 +319,14 @@ function createGameControls() {
         gotoRoom();
     });
     grid.addControl(button, 1, 1);
+
+    button = BABYLON.GUI.Button.CreateSimpleButton("goto", "toggle doors");
+    button.onPointerClickObservable.add(function () {
+        doorWalls.forEach(element => {
+            element.setEnabled(!element.isEnabled());
+        });        
+    });
+    grid.addControl(button, 1, 2);
 
     button = BABYLON.GUI.Button.CreateSimpleButton("fire", "fire arrow");
     grid.addControl(button, 0, 0);
