@@ -261,8 +261,8 @@ function addInputListeners() {
                 animateCameraPositionAndRotation(freeCamera, freeCamera.position,
                     new BABYLON.Vector3(0, 250, 0),
                     freeCamera.rotation,
-                    //new BABYLON.Vector3(1.4912565104551518, -1.5709696842019767, freeCamera.rotation.z));
-                    new BABYLON.Vector3(Math.PI / 2, 0, 0),
+                    //new BABYLON.Vector3(1.4912565104551518, -1.5709696842019767, freeCamera.rotation.z),
+                    new BABYLON.Vector3(Math.PI / 2, 0, freeCamera.rotation.z),
                     null);
             }
             else {
